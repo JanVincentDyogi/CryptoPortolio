@@ -39,7 +39,7 @@ function App() {
     <Router>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Home cryptoData={cryptoData} />} />
         <Route path="/market" element={<Market cryptoData={cryptoData} favorites={favorites} setFavorites={setFavorites} />} />
         <Route path="/watchlist" element={<Watchlist cryptoData={cryptoData} favorites={favorites} />} />
         <Route path="/crypto/:cryptoId" element={<CryptoDetails cryptoData={cryptoData} />} />
