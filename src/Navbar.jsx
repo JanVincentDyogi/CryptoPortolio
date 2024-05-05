@@ -14,6 +14,9 @@ const Navbar = () => {
         <li>
             <Link to="/watchlist">Watchlist</Link>
         </li>
+        <li>
+            <Link to="/buysell">Buy/Sell</Link>
+        </li>
       </ul>
     </nav>
   );
