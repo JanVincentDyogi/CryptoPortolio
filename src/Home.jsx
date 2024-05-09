@@ -15,7 +15,7 @@ function Home({ cryptoAssets, totalValue }) {
             {/* Display crypto asset information */}
             <p>
               <img src={asset.image} alt={asset.name} style={{ width: "17px", height: "17px" }} />
-              {asset.name} - {asset.symbol}: {asset.amount} (${(asset.amount * asset.current_price).toLocaleString()})
+              {asset.name} - {asset.symbol}: {asset.amount.toLocaleString('en-US', {maximumFractionDigits: 8 })} (${(asset.amount * asset.current_price).toFixed(2).toLocaleString()})
             </p>
           </div>
         ))}

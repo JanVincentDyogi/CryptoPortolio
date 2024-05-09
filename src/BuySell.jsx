@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-import axios from "axios";
 
-const BuySell = ({ cryptoData, cryptoAssets, setCryptoAssets}) => {
+const BuySell = ({ cryptoData, cryptoAssets, setCryptoAssets }) => {
     const [selectedCoin, setSelectedCoin] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredCoins, setFilteredCoins] = useState([]);
     const [buyOrSell, setBuyOrSell] = useState("buy");
-    const [amount, setAmount] = useState(0);    
+    const [amount, setAmount] = useState(0);
     const [usdtValue, setUsdtValue] = useState(0);
     const [selectedOption, setSelectedOption] = useState("amount");
     const [buttonText, setButtonText] = useState("Buy");
@@ -17,8 +16,9 @@ const BuySell = ({ cryptoData, cryptoAssets, setCryptoAssets}) => {
             setFilteredCoins([]);
         } else {
             const filtered = cryptoData.filter((coin) =>
-                coin.name.toLowerCase().includes(e.target.value.toLowerCase())||
-                coin.symbol.toLowerCase().includes(e.target.value.toLowerCase())
+                (coin.name.toLowerCase().includes(e.target.value.toLowerCase()) ||
+                    coin.symbol.toLowerCase().includes(e.target.value.toLowerCase())) &&
+                coin.symbol.toLowerCase() !== "usdt"
             );
             setFilteredCoins(filtered);
         }
@@ -66,7 +66,7 @@ const BuySell = ({ cryptoData, cryptoAssets, setCryptoAssets}) => {
                     const usdtIndex = prevAssets.findIndex((asset) => asset.symbol === "USDT");
                     const updatedAssets = [...prevAssets];
                     updatedAssets[usdtIndex].amount -= usdtValue;
-    
+
                     const existingAssetIndex = prevAssets.findIndex((asset) => asset.symbol === selectedCoin.symbol.toUpperCase());
                     if (existingAssetIndex !== -1) {
                         // Update the amount of the existing asset
@@ -86,28 +86,32 @@ const BuySell = ({ cryptoData, cryptoAssets, setCryptoAssets}) => {
             } else {
                 alert("Insufficient USDT balance to complete purchase.");
             }
-        } else {
-            const coinExists = cryptoAssets.some(asset => asset.symbol === selectedCoin.symbol);
-            if (coinExists && amount <= cryptoAssets.find(asset => asset.symbol === selectedCoin.symbol).amount) {
-                setCryptoAssets((prevAssets) => {
-                    const updatedAssets = prevAssets.map((asset) => {
-                        if (asset.symbol === selectedCoin.symbol) {
-                            // Update the amount of the selected coin
-                            return { ...asset, amount: asset.amount - amount };
-                        }
-                        return asset;
+        } else { // Sell logic
+            const coinExists = cryptoAssets.some((asset) => asset.symbol === selectedCoin.symbol.toUpperCase());
+            if (coinExists) {
+                const coinAmount = cryptoAssets.find((asset) => asset.symbol === selectedCoin.symbol.toUpperCase()).amount;
+                if (amount <= coinAmount) {
+                    const usdtAmount = amount * selectedCoin.current_price;
+                    setCryptoAssets((prevAssets) => {
+                        const updatedAssets = prevAssets.map((asset) => {
+                            if (asset.symbol === selectedCoin.symbol.toUpperCase()) {
+                                // Update the amount of the selected coin
+                                return { ...asset, amount: asset.amount - amount };
+                            }
+                            return asset;
+                        });
+                        const usdtIndex = prevAssets.findIndex((asset) => asset.symbol === "USDT");
+                        updatedAssets[usdtIndex].amount += usdtAmount;
+                        return updatedAssets;
                     });
-    
-                    const usdtIndex = prevAssets.findIndex((asset) => asset.symbol === "USDT");
-                    updatedAssets[usdtIndex].amount += usdtValue;
-    
-                    return updatedAssets;
-                });
+                } else {
+                    alert("Insufficient cryptocurrency balance to complete sale.");
+                }
             } else {
-                alert("Insufficient cryptocurrency balance to complete sale.");
+                alert("You don't own this cryptocurrency.");
             }
         }
-    };    
+    };
 
     return (
         <div>
@@ -146,15 +150,31 @@ const BuySell = ({ cryptoData, cryptoAssets, setCryptoAssets}) => {
                         <label>Market Price: {selectedCoin.current_price}</label>
                     </div>
                     <div>
-                        <label>Amount:</label>
+                        <label>Currency:</label>
                         <select value={selectedOption} onChange={(e) => handleOptionSelect(e.target.value)}>
                             <option value="amount">{selectedCoin.symbol.toUpperCase()}</option>
                             <option value="usdt">USDT</option>
                         </select>
                         {selectedOption === "amount" ? (
-                            <input type="number" value={amount} onChange={handleAmountChange} />
+                            <div>
+                                <label>Amount:</label>
+                                <input type="number" value={amount.toLocaleString('en-US', {maximumFractionDigits: 8 })} onChange={handleAmountChange} />
+                                {amount > 0 && ( // Show equivalent value only when amount > 0
+                                    <div>
+                                        <span>Equivalent: {usdtValue.toFixed(2)} USDT</span>
+                                    </div>
+                                )}
+                            </div>
                         ) : (
-                            <input type="number" value={usdtValue} onChange={handleUsdtValueChange} />
+                            <div>
+                                <label>Amount:</label>
+                                <input type="number" value={usdtValue} onChange={handleUsdtValueChange} />
+                                {usdtValue > 0 && ( // Show equivalent value only when usdtValue > 0
+                                    <div>
+                                        <span>Equivalent: {amount.toLocaleString('en-US', {maximumFractionDigits: 8 })} {selectedCoin.symbol.toUpperCase()}</span>
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
                     <div>
@@ -165,14 +185,15 @@ const BuySell = ({ cryptoData, cryptoAssets, setCryptoAssets}) => {
                             </>
                         ) : (
                             <>
-                                <label>Available {selectedCoin.symbol}:</label>
-                                <span>{selectedCoin.amount}</span>
+                                <label>Available:</label>
+                                <span>{cryptoAssets.find(asset => asset.symbol === selectedCoin.symbol.toUpperCase())?.amount?.toLocaleString('en-US', {maximumFractionDigits: 8 }) || 0} {selectedCoin.symbol.toUpperCase()}</span>
                             </>
                         )}
                     </div>
-                    <button onClick={handleBuy} disabled={buyOrSell === 'sell' && !cryptoAssets.some(asset => asset.symbol === selectedCoin.symbol)}>
+                    <button onClick={handleBuy} disabled={buyOrSell === 'sell' && (!cryptoAssets.some(asset => asset.symbol === selectedCoin.symbol.toUpperCase()) || amount > cryptoAssets.find(asset => asset.symbol === selectedCoin.symbol.toUpperCase())?.amount)}>
                         {buttonText}
-                    </button>        </>
+                    </button>
+                </>
             ) : (
                 <div>
                     <p>Please select a coin from the search bar.</p>
