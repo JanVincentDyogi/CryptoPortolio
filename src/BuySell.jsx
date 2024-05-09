@@ -158,7 +158,7 @@ const BuySell = ({ cryptoData, cryptoAssets, setCryptoAssets }) => {
                         {selectedOption === "amount" ? (
                             <div>
                                 <label>Amount:</label>
-                                <input type="number" value={amount.toLocaleString('en-US', {maximumFractionDigits: 8 })} onChange={handleAmountChange} />
+                                <input type="number" value={amount} onChange={handleAmountChange} />
                                 {amount > 0 && ( // Show equivalent value only when amount > 0
                                     <div>
                                         <span>Equivalent: {usdtValue.toFixed(2)} USDT</span>

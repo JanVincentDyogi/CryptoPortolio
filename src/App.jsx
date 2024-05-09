@@ -35,7 +35,11 @@ function App() {
       }
     };
 
-    fetchData();
+    fetchData()
+
+    // const fetchDataInterval = setInterval(fetchData, 10 * 60 * 1000);
+    // return () => clearInterval(fetchDataInterval);
+
   }, []);
 
   useEffect(() => {
